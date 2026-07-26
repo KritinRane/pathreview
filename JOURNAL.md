@@ -31,3 +31,25 @@ well within Tier 1 expectations while still touching real application code (not 
 **Setup confirmation:** [x] App runs locally at localhost:5173
 
 **Cohort ledger:** [ ] Issue added to cohort ledger
+
+## Week 8 — Reproduction & solution planning
+
+**Reproduction commit link:** https://github.com/KritinRane/pathreview/commit/b30477f7ac6ef4e2f8f6b8fefc9296c54b37edf3
+
+**Reproduction summary:**
+Ran `.venv/bin/python scripts/repro_issue_153.py` (and the existing unit test
+`tests/unit/test_faithfulness_checker.py::TestFaithfulnessChecker::test_none_context_chunk_text`),
+passing a context chunk of `{"text": None}` to `FaithfulnessChecker.check()`.
+Both crash with `TypeError: sequence item 0: expected str instance, NoneType found`
+at the `" ".join([chunk.get("text", "") ...])` line in
+`rag/evaluator/faithfulness_checker.py`, confirming the `.get(..., "")` default
+does not cover an explicit `None` value.
+
+**PLAN.md link:** https://github.com/KritinRane/pathreview/blob/fix/153-faithfulness-checker-none-context/PLAN.md
+
+**Walkthrough video (recommended):**
+
+**Blockers or open questions:**
+Need to confirm no other module builds context with the same `.get("text", "")`
+pattern, and decide whether to coerce truthy non-string `text` values (likely
+out of scope for this issue).
