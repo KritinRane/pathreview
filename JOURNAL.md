@@ -91,3 +91,44 @@ feedback before marking it ready for review.
 
 **Blockers:**
 None.
+
+---
+
+### Check-in 2 (end of week)
+
+**PR link:** https://github.com/ascherj/pathreview/pull/574
+
+**Branch:** `fix/153-faithfulness-checker-none-context`
+
+**What you built:**
+`FaithfulnessChecker.check()` crashed with a `TypeError` when a context
+chunk had `"text": None` (e.g. from a source that failed text extraction
+during ingestion), because `chunk.get("text", "")` only falls back to `""`
+when the key is *absent*, not when it's present but `None`. Changed the
+lookup to `chunk.get("text") or ""` so both a missing key and an explicit
+`None`/falsy value coerce to `""`, letting the checker degrade gracefully
+instead of aborting the whole evaluation run.
+
+**Tests added or updated:**
+`tests/unit/test_faithfulness_checker.py` — the pre-existing
+`test_none_context_chunk_text` (previously failing) now passes; added
+`test_none_context_chunk_text_matches_empty_string`, which asserts a
+`None`-text chunk scores identically to an empty-string chunk. Also fixed
+an unused-variable lint error in an unrelated pre-existing test
+(`test_common_words_filtered_in_overlap`) and added type annotations across
+the file to satisfy the repo's `disallow_untyped_defs` mypy setting, which
+the pre-commit hook enforces on `tests/` even though `make check`'s
+`typecheck` target excludes that directory.
+
+**Self-review confirmation:** [x] make check passes  [x] make test-unit passes
+
+Both commands were run before and after the change to isolate pre-existing
+issues: baseline (on `main`) was 53 failed / 375 passed unit tests and 182
+lint errors; after this fix it's 52 failed / 377 passed (the target test
+now passes, one new test added, zero new failures) and 180 lint errors (2
+fewer, from cleanup in the touched test file, zero new ones introduced).
+The remaining 52 test failures and 180 lint errors are pre-existing and
+unrelated to this change — verified with `git stash` diffs against `main`
+before making any edits.
+
+**Draft PR feedback received from:** none
