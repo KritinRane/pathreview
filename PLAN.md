@@ -64,6 +64,22 @@ Files/functions involved:
 - **Upstream duplication:** verify no other module builds context with the same
   `.get("text", "")` pattern that would need the same fix (grep the `rag/`
   package).
+  - Confirmed via `grep -rn 'get("text"' rag/`: three other call sites share
+    the pattern — `rag/evaluator/relevance_scorer.py:32`,
+    `rag/generator/review_generator.py:157`, and
+    `rag/retriever/hybrid.py:85`.
+  - `review_generator.py` and `hybrid.py` don't crash on `None` (an f-string
+    just renders the literal text `"None"`; `hybrid.py` merely stores the
+    value), so they're a data-quality smell, not a `TypeError`.
+  - `relevance_scorer.py` *does* crash the same class of bug: `text =
+    chunk.get("text", "")` feeds into `_tokenize(text)`, which calls
+    `text.lower().split()` — a `None` value raises `AttributeError:
+    'NoneType' object has no attribute 'lower'` instead of the faithfulness
+    checker's `TypeError`, but the underlying gotcha is identical.
+  - Decision: out of scope for issue #153, which is specifically about the
+    faithfulness checker. Filing this as a separate follow-up rather than
+    widening this PR, per the "one small method in one file" scope from the
+    Week 7 scope check.
 
 ### Edge cases
 - Chunk with `"text": None` → treated as empty, no crash.

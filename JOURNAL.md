@@ -53,3 +53,41 @@ does not cover an explicit `None` value.
 Need to confirm no other module builds context with the same `.get("text", "")`
 pattern, and decide whether to coerce truthy non-string `text` values (likely
 out of scope for this issue).
+
+## Week 9 — Solution building & PR submission
+
+### Check-in 1 (mid-week)
+
+**Current progress:**
+Implemented the fix from PLAN.md: `rag/evaluator/faithfulness_checker.py`
+now builds `context_text` with `chunk.get("text") or ""` instead of
+`chunk.get("text", "")`, so a chunk with `"text": None` coerces to an empty
+string instead of raising `TypeError` on `" ".join(...)`. Added a new
+regression test, `test_none_context_chunk_text_matches_empty_string`, that
+asserts a `None`-text chunk scores identically to an empty-string chunk. The
+pre-existing `test_none_context_chunk_text` (previously failing) now passes.
+All 4 sub-tasks from PLAN.md's "Plan" section are done: the one-line fix,
+the added assertion, a full run of `test_faithfulness_checker.py` to confirm
+no regressions, and re-running `scripts/repro_issue_153.py` (now prints
+`faithfulness score: 0.0` instead of crashing).
+
+Also resolved the "Upstream duplication" risk from PLAN.md: grepped `rag/`
+for the same `.get("text", "")` pattern and found it in three other files.
+Two (`review_generator.py`, `hybrid.py`) don't crash on `None`. One,
+`relevance_scorer.py`, has the identical bug class (crashes with
+`AttributeError` instead of `TypeError`) — documented in PLAN.md as a
+follow-up to file separately, kept out of this PR to stay scoped to issue
+#153.
+
+Ran `make test-unit` and `make check` before and after the change to isolate
+pre-existing failures: baseline was 53 failed / 375 passed unit tests and
+182 lint errors; after the fix it's 52 failed / 377 passed (one
+previously-failing test now passes, one new test added, no new failures)
+and still 182 lint errors (no new lint issues introduced).
+
+**Next steps:**
+Open a draft PR for peer/mentor review, fill in the PR template, and get
+feedback before marking it ready for review.
+
+**Blockers:**
+None.
