@@ -132,3 +132,69 @@ unrelated to this change — verified with `git stash` diffs against `main`
 before making any edits.
 
 **Draft PR feedback received from:** none
+
+## Week 10 — Iteration & reflection
+
+### Reviewer feedback
+
+**Feedback received:** [ ] Yes  [x] No — still awaiting review
+
+**Summary of feedback:**
+PR #574 has no comments and no reviews as of this writing. Per the Su26
+course note, reviewer feedback isn't a feature this term, so no maintainer
+review was expected.
+
+**How you responded:**
+N/A — no feedback arrived to respond to.
+
+---
+
+### Reflection
+
+**What was harder than you expected?**
+The fix itself — swapping `chunk.get("text", "")` for `chunk.get("text") or
+""` — was a one-line change. What took real time was everything around it:
+confirming the bug's exact failure mode with a reproduction script before
+touching code, grepping the rest of `rag/` for the same `.get(key, default)`
+pattern to see how far the risk actually spread, and then deciding what
+*not* to fix. Finding the identical bug class in `relevance_scorer.py` and
+choosing to leave it out of this PR (documented as a follow-up instead) was
+harder than writing the patch — it's easy to want to "fix it while I'm in
+here," and staying inside the issue's scope took more discipline than the
+code did.
+
+**What did you learn about working in a large codebase?**
+The pre-commit hook enforcing `disallow_untyped_defs` on `tests/` even
+though `make check`'s `typecheck` target excludes that directory was the
+clearest lesson: a codebase's stated checks (`make check`) and its actual
+enforced checks (pre-commit hooks, CI) can diverge, and you only find that
+divergence by trying to commit, not by reading the Makefile. I also learned
+to treat pre-existing failures as a baseline to diff against rather than a
+blocker — running `make test-unit`/`make check` on `main` first (53
+failed / 182 lint errors) gave me a number to compare my branch against, so
+I could prove my change added zero new failures instead of just eyeballing
+the diff and hoping.
+
+**How did AI tools help — and where did they fall short?**
+AI assistance was most useful for the mechanical, error-prone parts:
+grepping for every other occurrence of the `.get(key, default)` pattern
+across `rag/`, writing the regression test that mirrors the existing test
+style, and adding type annotations across the touched test file to satisfy
+mypy. It fell short on the judgment calls — deciding whether
+`relevance_scorer.py`'s identical bug belonged in this PR or a separate
+issue, and how much of the "upstream duplication" risk from PLAN.md was
+actually worth investigating versus noting and moving on. Those scoping
+decisions needed a human read of what the issue was actually asking for.
+
+**What would you do differently if you started over?**
+I'd file the `relevance_scorer.py` follow-up issue immediately after
+finding it in Week 9 instead of just noting it in PLAN.md — right now it
+only exists as a paragraph in this repo's docs, not as a trackable issue,
+so it's easy for it to get lost.
+
+**What are you most proud of from this module?**
+Not the one-line fix — the repro script and the baseline
+test/lint counts. Having `scripts/repro_issue_153.py` crash predictably
+before the fix and print a real score after, plus a documented before/after
+test count, meant the PR was verifiable by anyone reading it, not just
+asserted as fixed.
